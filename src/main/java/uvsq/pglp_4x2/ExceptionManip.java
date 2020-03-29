@@ -7,7 +7,7 @@ public class ExceptionManip {
 		private static final double MIN_VALUE = 100000;
 		private static final double MAX_VALUE = 100000;
 		
-		public void handleMinMax(double nb) {
+		public static void handleMinMax(double nb) {
 			if(nb > MAX_VALUE || nb < -MIN_VALUE) {
 				throw new MinMaxException();
 			}
