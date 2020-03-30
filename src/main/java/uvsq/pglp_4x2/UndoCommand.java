@@ -1,22 +1,19 @@
 package uvsq.pglp_4x2;
 import java.util.Stack;
 
-import javax.faces.context.ExceptionHandler;
+
 public class UndoCommand implements Command {
-	
-	/**
-	 * # RECEIVER: historique et commande
-	 */
-	
-	private UndoableCommand lastCommand;
-	
+	private final Stack<UndoableCommand> historique;
+
 	public UndoCommand(Stack<UndoableCommand> historique) {
-		ExceptionManip.ControlTaille(historique.size(), 1);
-		this.lastCommand = historique.pop();
+		this.historique = historique;
 	}
 
 	@Override
-	public void apply() {
-		lastCommand.undo();		
+	public void execute() {
+		if (historique.isEmpty()) {
+			throw new IllegalStateException("Pas de commande à annuler!");
+		}
+		historique.pop().undo();
 	}
 }

@@ -2,60 +2,52 @@ package uvsq.pglp_4x2;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 
 
 public class Interpreteur {
-	private Stack<UndoableCommand> historique;
-	private Switch interrupteur;
-	private List<String> log;
-	
-	public Interpreteur() {
-		this.historique = new Stack<UndoableCommand>();
-		this.interrupteur = new Switch();
-		this.log = new ArrayList<String>();
+	private final Map<String, Command> commands;
+	private final Context context;
+	private final Stack<UndoableCommand> historique;
+
+	// Le constructeur doit être visible par les classes filles (donc protected ou public)
+	protected Interpreteur() {
+		this.commands = new HashMap<>();
+		this.context = new Context();
+		this.historique = new Stack<>();
+
+		registerCommand("undo", new UndoCommand(historique));
+		registerCommand("exit", new ExitCommand());
 	}
-	
-	/**
-	 * Exécute une commande
-	 * @param command
-	 */
-	private void applyCommand(Command command) {
-		command.apply();
-	}	
-	
-	/**
-	 * ajout de la commande dans l'historique
-	 * La commande n'est pas ajoutée à l'historique si elle lance une exception
-	 * @param command
-	 */
-	public void applyStoreCommand(UndoableCommand command) {
-		try {
-			command.apply();
-			this.historique.add(command);	
-		} catch (Exception e) {
-			throw e;
+
+	final protected void registerCommand(String s, Command command) {
+		this.commands.put(s, command);
+	}
+
+	protected Command getCommand(String s) {
+		if (this.commands.containsKey(s)) {
+			return this.commands.get(s);
 		}
+		return null;
 	}
-	
-	public void undoCommand() {
-		this.applyCommand(new UndoCommand(historique));
+
+	final public Context getContext() {
+		return context;
 	}
-	
-	public void log(String str) {
-		this.applyCommand(() -> log.add(str));
-	}
-	
-	public String getLastLog() {
-		return log.get(log.size() - 1);
-	}
-	
-	public void shutdown() {
-		this.applyCommand(new QuitCommand(interrupteur));
-	}
-	
-	public boolean isOn() {
-		return interrupteur.isOn();
+
+	public void executeCommand(String name) {
+		Command c = this.getCommand(name);
+		if (c == null) {
+			throw new IllegalArgumentException("La commande " + name + " n'est pas recconnue.");
+		}
+		c.execute();
+		if (c instanceof UndoableCommand) {
+			this.historique.push((UndoableCommand) c);
+		} else {
+			// une commande non annulable : donc on ne peut aller plus loin dans l'historique
+			this.historique.clear();
+		}
 	}
 }
